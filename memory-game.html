@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Pattern Game - Simon Says</title>
+    <!--
+        MEMORY PATTERN GAME (Simon Says)
+        
+        HOW TO PLAY:
+        1. Watch the pattern of colors that light up
+        2. Remember the sequence
+        3. Click the colors in the same order
+        4. Each round adds one more color to the pattern
+        5. How far can you go?
+        
+        FEATURES:
+        - Visual feedback with bright flashes
+        - Sound feedback (Web Audio API)
+        - Progressive difficulty
+        - Score tracking
+        - High score persistence
+        
+        TIPS:
+        - Take your time - there's no time limit
+        - Try to chunk the pattern (group colors)
+        - Say the colors out loud to help remember
+        - Focus on the rhythm
+    -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .color-btn {
+            width: 100%;
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .color-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.3);
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        
+        .color-btn:active::after,
+        .color-btn.active::after {
+            opacity: 1;
+        }
+        
+        .color-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .btn-green {
+            background: #2ecc71;
+            box-shadow: 0 5px 0 #27ae60, 0 10px 20px rgba(46,204,113,0.4);
+        }
+        
+        .btn-green:active,
+        .btn-green.active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #27ae60, 0 0 40px rgba(46,204,113,0.8);
+            background: #58d68d;
+        }
+        
+        .btn-red {
+            background: #e74c3c;
+            box-shadow: 0 5px 0 #c0392b, 0 10px 20px rgba(231,76,60,0.4);
+        }
+        
+        .btn-red:active,
+        .btn-red.active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #c0392b, 0 0 40px rgba(231,76,60,0.8);
+            background: #ec7063;
+        }
+        
+        .btn-yellow {
+            background: #f1c40f;
+            box-shadow: 0 5px 0 #d4ac0d, 0 10px 20px rgba(241,196,15,0.4);
+        }
+        
+        .btn-yellow:active,
+        .btn-yellow.active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #d4ac0d, 0 0 40px rgba(241,196,15,0.8);
+            background: #f4d03f;
+        }
+        
+        .btn-blue {
+            background: #3498db;
+            box-shadow: 0 5px 0 #2980b9, 0 10px 20px rgba(52,152,219,0.4);
+        }
+        
+        .btn-blue:active,
+        .btn-blue.active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #2980b9, 0 0 40px rgba(52,152,219,0.8);
+            background: #5dade2;
+        }
+        
+        .center-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #333;
+            border: 4px solid white;
+            color: white;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .center-btn:hover {
+            background: #444;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #555;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status.watching {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.your-turn {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status.game-over {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px;
+            font-size: 1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+        }
+        
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46,204,113,0.4);
+        }
+        
+        .btn-reset {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background: #c0392b;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .instructions h3 {
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #555;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+        
+        .difficulty-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .difficulty-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s ease;
+        }
+        
+        .difficulty-dot.active {
+            background: #3498db;
+            transform: scale(1.2);
+        }
+        
+        .difficulty-dot.hard {
+            background: #e74c3c;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Memory Pattern</h1>
+        <p class="subtitle">Watch, remember, repeat!</p>
+        
+        <div class="instructions">
+            <h3>📋 How to Play:</h3>
+            <ol>
+                <li>Press <strong>Start</strong> to begin</li>
+                <li><strong>Watch</strong> the pattern of colors</li>
+                <li><strong>Repeat</strong> the pattern by clicking colors</li>
+                <li>Each round adds one more step!</li>
+            </ol>
+        </div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="score">0</div>
+                <div class="stat-label">Score</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="high-score">0</div>
+                <div class="stat-label">Best</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="round">0</div>
+                <div class="stat-label">Round</div>
+            </div>
+        </div>
+        
+        <div class="difficulty-indicator" id="difficulty-indicator">
+            <div class="difficulty-dot"></div>
+            <div class="difficulty-dot"></div>
+            <div class="difficulty-dot"></div>
+            <div class="difficulty-dot"></div>
+            <div class="difficulty-dot"></div>
+            <div class="difficulty-dot"></div>
+            <div class="difficulty-dot"></div>
+            <div class="difficulty-dot"></div>
+            <div class="difficulty-dot"></div>
+            <div class="difficulty-dot"></div>
+        </div>
+        
+        <div class="status" id="status">Press Start to begin!</div>
+        
+        <div class="game-board" style="position: relative;">
+            <button class="color-btn btn-green" id="btn-0" data-color="0" onclick="handleColorClick(0)"></button>
+            <button class="color-btn btn-red" id="btn-1" data-color="1" onclick="handleColorClick(1)"></button>
+            <button class="color-btn btn-yellow" id="btn-2" data-color="2" onclick="handleColorClick(2)"></button>
+            <button class="color-btn btn-blue" id="btn-3" data-color="3" onclick="handleColorClick(3)"></button>
+        </div>
+        
+        <div class="controls">
+            <button class="btn-start" id="start-btn" onclick="startGame()">▶ Start</button>
+            <button class="btn-reset" onclick="resetGame()">↺ Reset</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let sequence = [];
+        let playerSequence = [];
+        let round = 0;
+        let score = 0;
+        let highScore = localStorage.getItem('memoryGameHighScore') || 0;
+        let isPlaying = false;
+        let isPlayerTurn = false;
+        
+        // Audio context for sounds
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Frequencies for each color (E4, C#4, A4, E3)
+        const frequencies = [329.63, 277.18, 440, 164.81];
+        
+        // Update high score display
+        document.getElementById('high-score').textContent = highScore;
+        
+        function playTone(frequency, duration = 300) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        }
+        
+        function playErrorSound() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 150;
+            oscillator.type = 'sawtooth';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+        
+        function activateButton(colorIndex, duration = 400) {
+            const btn = document.getElementById(`btn-${colorIndex}`);
+            btn.classList.add('active');
+            playTone(frequencies[colorIndex], duration);
+            
+            setTimeout(() => {
+                btn.classList.remove('active');
+            }, duration);
+        }
+        
+        function updateStatus(message, type = '') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+        
+        function updateDifficulty() {
+            const dots = document.querySelectorAll('.difficulty-dot');
+            dots.forEach((dot, index) => {
+                dot.classList.remove('active', 'hard');
+                if (index < round) {
+                    dot.classList.add('active');
+                    if (index >= 7) {
+                        dot.classList.add('hard');
+                    }
+                }
+            });
+        }
+        
+        function startGame() {
+            if (isPlaying) return;
+            
+            // Resume audio context if suspended
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            sequence = [];
+            playerSequence = [];
+            round = 0;
+            score = 0;
+            isPlaying = true;
+            
+            document.getElementById('score').textContent = score;
+            document.getElementById('round').textContent = round;
+            document.getElementById('start-btn').disabled = true;
+            
+            updateDifficulty();
+            nextRound();
+        }
+        
+        function nextRound() {
+            round++;
+            playerSequence = [];
+            document.getElementById('round').textContent = round;
+            updateDifficulty();
+            
+            // Add new color to sequence
+            sequence.push(Math.floor(Math.random() * 4));
+            
+            // Play sequence
+            updateStatus('👀 Watch the pattern...', 'watching');
+            isPlayerTurn = false;
+            disableButtons();
+            
+            setTimeout(() => {
+                playSequence();
+            }, 800);
+        }
+        
+        function playSequence() {
+            let i = 0;
+            const speed = Math.max(300, 600 - (round * 30)); // Get faster as rounds progress
+            
+            function playNext() {
+                if (i < sequence.length) {
+                    activateButton(sequence[i], speed * 0.8);
+                    i++;
+                    setTimeout(playNext, speed);
+                } else {
+                    setTimeout(() => {
+                        isPlayerTurn = true;
+                        enableButtons();
+                        updateStatus('✋ Your turn! Repeat the pattern', 'your-turn');
+                    }, 300);
+                }
+            }
+            
+            playNext();
+        }
+        
+        function handleColorClick(color) {
+            if (!isPlayerTurn || !isPlaying) return;
+            
+            activateButton(color, 200);
+            playerSequence.push(color);
+            
+            // Check if correct
+            const currentIndex = playerSequence.length - 1;
+            if (playerSequence[currentIndex] !== sequence[currentIndex]) {
+                gameOver();
+                return;
+            }
+            
+            // Check if round complete
+            if (playerSequence.length === sequence.length) {
+                score += round * 10;
+                document.getElementById('score').textContent = score;
+                
+                isPlayerTurn = false;
+                disableButtons();
+                updateStatus('✅ Correct! Next round...', 'watching');
+                
+                setTimeout(() => {
+                    nextRound();
+                }, 1000);
+            }
+        }
+        
+        function gameOver() {
+            isPlaying = false;
+            isPlayerTurn = false;
+            playErrorSound();
+            
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('memoryGameHighScore', highScore);
+                document.getElementById('high-score').textContent = highScore;
+            }
+            
+            updateStatus(`❌ Game Over! You reached round ${round}`, 'game-over');
+            document.getElementById('start-btn').disabled = false;
+            disableButtons();
+        }
+        
+        function resetGame() {
+            isPlaying = false;
+            isPlayerTurn = false;
+            sequence = [];
+            playerSequence = [];
+            round = 0;
+            score = 0;
+            
+            document.getElementById('score').textContent = 0;
+            document.getElementById('round').textContent = 0;
+            document.getElementById('start-btn').disabled = false;
+            
+            updateDifficulty();
+            updateStatus('Press Start to begin!');
+            disableButtons();
+        }
+        
+        function disableButtons() {
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`btn-${i}`).disabled = true;
+            }
+        }
+        
+        function enableButtons() {
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`btn-${i}`).disabled = false;
+            }
+        }
+        
+        // Initialize
+        disableButtons();
+    </script>
+</body>
+</html>

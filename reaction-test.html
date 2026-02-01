@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Time Tester</title>
+    <!--
+        REACTION TIME TESTER
+        
+        HOW TO PLAY:
+        1. Click "Start Test" to begin
+        2. Wait for the screen to turn GREEN
+        3. Click as FAST as you can!
+        4. See your reaction time and how you compare
+        
+        TIPS:
+        - Don't click before it turns green (that's cheating!)
+        - Try multiple times to see your average
+        - Compare with friends!
+        
+        HUMAN REACTION TIME AVERAGES:
+        - 0-150ms: Superhuman (top 1%)
+        - 150-200ms: Excellent (top 10%)
+        - 200-250ms: Good (above average)
+        - 250-300ms: Average (most people)
+        - 300-400ms: Below average
+        - 400ms+: You might be tired ;)
+        
+        Professional esports players typically have
+        150-200ms reaction times.
+    -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            border-left: 4px solid #e94560;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .instructions h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #555;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+        
+        .test-area {
+            width: 100%;
+            height: 300px;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .test-area.waiting {
+            background: #e94560;
+            color: white;
+        }
+        
+        .test-area.ready {
+            background: #0f3460;
+            color: white;
+        }
+        
+        .test-area.go {
+            background: #00d9ff;
+            color: #1a1a2e;
+            animation: pulse-bg 0.5s ease;
+        }
+        
+        .test-area.result {
+            background: #533483;
+            color: white;
+        }
+        
+        .test-area.too-soon {
+            background: #ff6b6b;
+            color: white;
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes pulse-bg {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .test-area h2 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .test-area p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .reaction-time {
+            font-size: 4em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .percentile {
+            font-size: 1.5em;
+            margin-top: 10px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-box h4 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #533483;
+        }
+        
+        .history {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .history h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .history-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .history-item {
+            background: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .history-item.excellent { background: #d4edda; color: #155724; }
+        .history-item.good { background: #d1ecf1; color: #0c5460; }
+        .history-item.average { background: #fff3cd; color: #856404; }
+        .history-item.poor { background: #f8d7da; color: #721c24; }
+        
+        .percentile-chart {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .percentile-chart h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .percentile-bar {
+            height: 30px;
+            background: linear-gradient(to right, 
+                #ff6b6b 0%, 
+                #ff6b6b 15%,
+                #ffd93d 15%, 
+                #ffd93d 40%,
+                #6bcf7f 40%, 
+                #6bcf7f 70%,
+                #4d96ff 70%, 
+                #4d96ff 100%);
+            border-radius: 15px;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .percentile-marker {
+            position: absolute;
+            top: -10px;
+            width: 4px;
+            height: 50px;
+            background: #333;
+            border-radius: 2px;
+            transform: translateX(-50%);
+            transition: left 0.5s ease;
+        }
+        
+        .percentile-marker::after {
+            content: '▼';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .percentile-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        button {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            background: linear-gradient(135deg, #e94560 0%, #533483 100%);
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(233,69,96,0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Reaction Time Tester</h1>
+        <p class="subtitle">Test your reflexes and compare with human averages!</p>
+        
+        <div class="instructions">
+            <h3>📋 How to Play:</h3>
+            <ol>
+                <li>Click the box below or press <strong>Space</strong> to start</li>
+                <li>Wait for it to turn <strong style="color: #00d9ff;">BLUE</strong></li>
+                <li>Click immediately when it changes!</li>
+                <li>See your reaction time and percentile ranking</li>
+            </ol>
+        </div>
+        
+        <div class="test-area waiting" id="test-area" onclick="handleClick()">
+            <h2 id="test-text">Click to Start</h2>
+            <p id="test-subtext">Press space or click here</p>
+            <div class="reaction-time hidden" id="reaction-display"></div>
+            <div class="percentile hidden" id="percentile-display"></div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <h4>Best Time</h4>
+                <div class="stat-value" id="best-time">--</div>
+            </div>
+            <div class="stat-box">
+                <h4>Average</h4>
+                <div class="stat-value" id="avg-time">--</div>
+            </div>
+            <div class="stat-box">
+                <h4>Attempts</h4>
+                <div class="stat-value" id="attempts">0</div>
+            </div>
+        </div>
+        
+        <div class="percentile-chart">
+            <h3>📊 Where You Stand</h3>
+            <div class="percentile-bar">
+                <div class="percentile-marker" id="percentile-marker" style="left: 50%;"></div>
+            </div>
+            <div class="percentile-labels">
+                <span>Slow<br>400ms+</span>
+                <span>Average<br>250-300ms</span>
+                <span>Fast<br>200ms</span>
+                <span>Pro<br>150ms</span>
+            </div>
+        </div>
+        
+        <div class="history">
+            <h3>📝 Recent Attempts</h3>
+            <div class="history-list" id="history-list">
+                <span style="color: #999;">No attempts yet...</span>
+            </div>
+        </div>
+        
+        <button onclick="resetStats()">🗑️ Clear History</button>
+    </div>
+
+    <script>
+        let state = 'waiting'; // waiting, ready, go, result
+        let startTime = 0;
+        let timeoutId = null;
+        let attempts = [];
+        
+        const testArea = document.getElementById('test-area');
+        const testText = document.getElementById('test-text');
+        const testSubtext = document.getElementById('test-subtext');
+        const reactionDisplay = document.getElementById('reaction-display');
+        const percentileDisplay = document.getElementById('percentile-display');
+        
+        // Handle keyboard
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handleClick();
+            }
+        });
+        
+        function handleClick() {
+            if (state === 'waiting' || state === 'result' || state === 'too-soon') {
+                startTest();
+            } else if (state === 'ready') {
+                tooSoon();
+            } else if (state === 'go') {
+                recordTime();
+            }
+        }
+        
+        function startTest() {
+            state = 'ready';
+            testArea.className = 'test-area ready';
+            testText.textContent = 'Wait for Blue...';
+            testSubtext.textContent = 'Get ready!';
+            reactionDisplay.classList.add('hidden');
+            percentileDisplay.classList.add('hidden');
+            
+            // Random delay between 2-5 seconds
+            const delay = 2000 + Math.random() * 3000;
+            
+            timeoutId = setTimeout(() => {
+                state = 'go';
+                startTime = Date.now();
+                testArea.className = 'test-area go';
+                testText.textContent = 'CLICK NOW!';
+                testSubtext.textContent = 'As fast as you can!';
+            }, delay);
+        }
+        
+        function tooSoon() {
+            clearTimeout(timeoutId);
+            state = 'too-soon';
+            testArea.className = 'test-area too-soon';
+            testText.textContent = 'Too Soon!';
+            testSubtext.textContent = 'Click to try again';
+            
+            setTimeout(() => {
+                state = 'waiting';
+                testArea.className = 'test-area waiting';
+                testText.textContent = 'Click to Start';
+                testSubtext.textContent = 'Press space or click here';
+            }, 1500);
+        }
+        
+        function recordTime() {
+            const reactionTime = Date.now() - startTime;
+            state = 'result';
+            
+            attempts.push(reactionTime);
+            updateStats(reactionTime);
+            
+            testArea.className = 'test-area result';
+            testText.textContent = `${reactionTime}ms`;
+            testSubtext.textContent = 'Click to try again';
+        }
+        
+        function updateStats(time) {
+            // Calculate percentile based on typical human reaction times
+            // Using a rough normal distribution model
+            let percentile;
+            if (time < 150) percentile = 99;
+            else if (time < 180) percentile = 95;
+            else if (time < 200) percentile = 90;
+            else if (time < 220) percentile = 80;
+            else if (time < 250) percentile = 65;
+            else if (time < 300) percentile = 50;
+            else if (time < 350) percentile = 30;
+            else if (time < 400) percentile = 15;
+            else percentile = 5;
+            
+            // Update stats display
+            const best = Math.min(...attempts);
+            const avg = Math.round(attempts.reduce((a, b) => a + b, 0) / attempts.length);
+            
+            document.getElementById('best-time').textContent = best + 'ms';
+            document.getElementById('avg-time').textContent = avg + 'ms';
+            document.getElementById('attempts').textContent = attempts.length;
+            
+            // Update percentile marker
+            const marker = document.getElementById('percentile-marker');
+            marker.style.left = (100 - percentile) + '%';
+            
+            // Add to history
+            const historyList = document.getElementById('history-list');
+            if (attempts.length === 1) {
+                historyList.innerHTML = '';
+            }
+            
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.textContent = time + 'ms';
+            
+            if (time < 200) item.classList.add('excellent');
+            else if (time < 280) item.classList.add('good');
+            else if (time < 350) item.classList.add('average');
+            else item.classList.add('poor');
+            
+            historyList.insertBefore(item, historyList.firstChild);
+            
+            // Keep only last 10
+            while (historyList.children.length > 10) {
+                historyList.removeChild(historyList.lastChild);
+            }
+        }
+        
+        function resetStats() {
+            attempts = [];
+            document.getElementById('best-time').textContent = '--';
+            document.getElementById('avg-time').textContent = '--';
+            document.getElementById('attempts').textContent = '0';
+            document.getElementById('history-list').innerHTML = '<span style="color: #999;">No attempts yet...</span>';
+            document.getElementById('percentile-marker').style.left = '50%';
+            
+            state = 'waiting';
+            testArea.className = 'test-area waiting';
+            testText.textContent = 'Click to Start';
+            testSubtext.textContent = 'Press space or click here';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "name": "mini-games-portfolio",
+  "version": "1.0.0",
+  "description": "A collection of 6 addictive mini games - terminal and browser based",
+  "main": "index.js",
+  "scripts": {
+    "snake": "node snake.js",
+    "tetris": "node tetris.js",
+    "test": "echo 'Run individual games: npm run snake or npm run tetris'"
+  },
+  "keywords": [
+    "games",
+    "terminal",
+    "snake",
+    "tetris",
+    "browser-games",
+    "ascii",
+    "cli"
+  ],
+  "author": "OpenClaw Games",
+  "license": "MIT",
+  "dependencies": {
+    "keypress": "^0.2.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openclaw/mini-games"
+  },
+  "bugs": {
+    "url": "https://github.com/openclaw/mini-games/issues"
+  },
+  "homepage": "https://github.com/openclaw/mini-games#readme"
+}

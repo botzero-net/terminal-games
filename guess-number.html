@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Guessing AI</title>
+    <!--
+        NUMBER GUESSING AI
+        
+        HOW TO PLAY:
+        1. Think of a number between 1 and 100
+        2. The AI will guess your number using binary search
+        3. Tell the AI if its guess is Too High, Too Low, or Correct
+        4. Watch the AI reasoning process in real-time!
+        
+        The AI uses an optimal binary search algorithm that
+        guarantees finding your number in 7 guesses or less.
+        
+        This is both fun AND educational - learn how binary
+        search works by watching the AI think!
+    -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .instructions h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #555;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+        
+        .game-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .range-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .range-display h2 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .range-numbers {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .ai-guess {
+            font-size: 4em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .guess-count {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .btn-high {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-high:hover {
+            background: #ee5a5a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,107,107,0.4);
+        }
+        
+        .btn-low {
+            background: #4ecdc4;
+            color: white;
+        }
+        
+        .btn-low:hover {
+            background: #3dbbb3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(78,205,196,0.4);
+        }
+        
+        .btn-correct {
+            background: #45b7d1;
+            color: white;
+        }
+        
+        .btn-correct:hover {
+            background: #34a6c0;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(69,183,209,0.4);
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 1.2em;
+            padding: 20px 40px;
+        }
+        
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102,126,234,0.4);
+        }
+        
+        .thinking {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .thinking h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .thinking-content {
+            font-family: 'Courier New', monospace;
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            line-height: 1.6;
+            min-height: 100px;
+        }
+        
+        .algorithm-step {
+            margin: 5px 0;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .result {
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .result h2 {
+            color: #45b7d1;
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+        
+        .result p {
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Number Guessing AI</h1>
+        <p class="subtitle">Watch the AI use binary search to read your mind!</p>
+        
+        <div class="instructions">
+            <h3>📋 How to Play:</h3>
+            <ol>
+                <li>Think of a number between <strong>1 and 100</strong></li>
+                <li>The AI will guess your number</li>
+                <li>Click <strong>Too High</strong>, <strong>Too Low</strong>, or <strong>Correct</strong></li>
+                <li>Watch the AI reasoning on the right!</li>
+            </ol>
+        </div>
+        
+        <div id="start-screen" class="game-area">
+            <button class="btn-start" onclick="startGame()">🎮 Start Game</button>
+        </div>
+        
+        <div id="game-screen" class="hidden">
+            <div class="range-display">
+                <h2>Current Search Range</h2>
+                <div class="range-numbers">
+                    <span id="min-range">1</span> - <span id="max-range">100</span>
+                </div>
+            </div>
+            
+            <div class="ai-guess pulse" id="ai-guess">50</div>
+            
+            <p class="guess-count">Guess #<span id="guess-number">1</span></p>
+            
+            <div class="buttons">
+                <button class="btn-high" onclick="makeGuess('high')">📈 Too High</button>
+                <button class="btn-correct" onclick="makeGuess('correct')">✅ Correct!</button>
+                <button class="btn-low" onclick="makeGuess('low')">📉 Too Low</button>
+            </div>
+            
+            <div class="thinking">
+                <h3>🧠 AI Thinking Process</h3>
+                <div class="thinking-content" id="thinking-content">
+                    Waiting to start...
+                </div>
+            </div>
+        </div>
+        
+        <div id="result-screen" class="result hidden">
+            <h2>🎉 Victory!</h2>
+            <p>The AI guessed your number in <strong id="final-guesses">0</strong> guesses!</p>
+            <p id="efficiency-comment"></p>
+            <button class="btn-start" onclick="startGame()">🔄 Play Again</button>
+            
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="stat-guesses">0</div>
+                    <div class="stat-label">Guesses</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="stat-optimal">7</div>
+                    <div class="stat-label">Optimal Max</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="stat-efficiency">100%</div>
+                    <div class="stat-label">Efficiency</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let minRange = 1;
+        let maxRange = 100;
+        let currentGuess = 50;
+        let guessCount = 0;
+        let thinkingHistory = [];
+        
+        function startGame() {
+            minRange = 1;
+            maxRange = 100;
+            guessCount = 0;
+            thinkingHistory = [];
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            updateDisplay();
+            addThinkingStep('🎯 Starting binary search algorithm...');
+            addThinkingStep(`📊 Initial range: ${minRange} to ${maxRange}`);
+            addThinkingStep(`🤔 Calculating optimal guess: (${minRange} + ${maxRange}) / 2 = ${Math.floor((minRange + maxRange) / 2)}`);
+        }
+        
+        function updateDisplay() {
+            document.getElementById('min-range').textContent = minRange;
+            document.getElementById('max-range').textContent = maxRange;
+            document.getElementById('ai-guess').textContent = currentGuess;
+            document.getElementById('guess-number').textContent = guessCount;
+        }
+        
+        function addThinkingStep(text) {
+            thinkingHistory.push(text);
+            const content = document.getElementById('thinking-content');
+            const step = document.createElement('div');
+            step.className = 'algorithm-step';
+            step.style.animationDelay = `${thinkingHistory.length * 0.1}s`;
+            step.textContent = `> ${text}`;
+            content.appendChild(step);
+            content.scrollTop = content.scrollHeight;
+        }
+        
+        function calculateNextGuess() {
+            // Binary search: always guess the middle
+            currentGuess = Math.floor((minRange + maxRange) / 2);
+            guessCount++;
+        }
+        
+        function makeGuess(result) {
+            if (result === 'correct') {
+                showResult();
+                return;
+            }
+            
+            if (result === 'high') {
+                addThinkingStep(`❌ ${currentGuess} is too HIGH`);
+                maxRange = currentGuess - 1;
+                addThinkingStep(`📉 New maximum set to ${maxRange}`);
+            } else {
+                addThinkingStep(`❌ ${currentGuess} is too LOW`);
+                minRange = currentGuess + 1;
+                addThinkingStep(`📈 New minimum set to ${minRange}`);
+            }
+            
+            calculateNextGuess();
+            addThinkingStep(`🤔 New optimal guess: (${minRange} + ${maxRange}) / 2 = ${currentGuess}`);
+            addThinkingStep(`🔍 Remaining possibilities: ${maxRange - minRange + 1} numbers`);
+            
+            updateDisplay();
+        }
+        
+        function showResult() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            
+            document.getElementById('final-guesses').textContent = guessCount;
+            document.getElementById('stat-guesses').textContent = guessCount;
+            
+            // Calculate efficiency
+            const optimalMax = Math.ceil(Math.log2(100)) + 1;
+            const efficiency = Math.round((optimalMax / Math.max(guessCount, 1)) * 100);
+            document.getElementById('stat-efficiency').textContent = efficiency + '%';
+            
+            // Comment on performance
+            let comment = '';
+            if (guessCount <= 3) {
+                comment = '🌟 Incredible! The AI was super efficient!';
+            } else if (guessCount <= 5) {
+                comment = '✨ Great job! Very efficient guessing!';
+            } else if (guessCount <= 7) {
+                comment = '👍 Good! Within optimal range.';
+            } else {
+                comment = '🤔 Hmm, were you changing your number? ;)';
+            }
+            document.getElementById('efficiency-comment').textContent = comment;
+        }
+        
+        // Initialize first guess
+        calculateNextGuess();
+    </script>
+</body>
+</html>
